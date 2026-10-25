@@ -1,0 +1,57 @@
+# Market Analysis Tool - default configuration
+# Override any value from the CLI, e.g.:  python -m mat backtest --set backtest.top_k=20
+
+data:
+  dir: data/eod2_data/daily            # one CSV per NSE symbol (from github.com/BennyThadikaran/eod2_data)
+  isin_map: data/eod2_data/isin_symbol_map.json
+  cache_dir: data/cache
+  start: "2008-01-01"                  # load history from here (features need ~1y warm-up)
+  benchmark: NIFTYBEES                 # Nifty 50 ETF, used as the market benchmark
+  bad_tick_threshold: 0.35             # |1-day move| above this is treated as an unadjusted corporate action
+
+universe:
+  size: 500                            # top N stocks by liquidity on each date (a point-in-time "Nifty 500" proxy)
+  min_price: 20                        # ignore penny stocks (Rs)
+  min_history_days: 200                # valid trading days required in the past year
+  liquidity_window: 63                 # days used for median traded value
+
+features:
+  sample_every: 5                      # trading days between training samples
+
+model:
+  type: ridge                          # ridge | lgbm  (ridge won the sweep on risk-adjusted return)
+  horizon: 63                          # prediction horizon & rebalance gap in trading days (63 = ~quarterly)
+  train_years: 6                       # rolling training window
+  retrain_every_months: 6
+  lgbm:
+    n_estimators: 300
+    learning_rate: 0.03
+    num_leaves: 31
+    min_child_samples: 200
+    subsample: 0.8
+    subsample_freq: 1
+    colsample_bytree: 0.8
+    reg_lambda: 1.0
+    verbose: -1
+  ridge:
+    alpha: 10.0
+
+backtest:
+  start: "2014-01-01"                  # first out-of-sample decision date
+  end: null                            # null = latest available
+  top_k: 20                            # number of stocks held
+  buffer: 2.0                          # keep a held stock while it ranks within top (buffer x top_k); 1 = no buffer
+  cost_bps_per_side: 25                # STT + stamp + exchange + GST + slippage, per buy or sell
+  risk_free: 0.065                     # annual, for Sharpe
+  strategies: [ml, rule_trend, momentum_12_1, low_vol, universe_ew]
+
+sweep:
+  grid:
+    model.type: [lgbm, ridge]
+    model.horizon: [21, 63]             # rebalance monthly vs quarterly
+    backtest.top_k: [20, 50]
+    backtest.buffer: [1.0, 2.0]
+    universe.size: [200, 500]
+
+output:
+  dir: results

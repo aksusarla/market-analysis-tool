@@ -1,0 +1,12 @@
+data/
+results/*.csv
+!results/sample/
+!results/sample/*.csv
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+# never commit personal holdings or API keys
+holdings*.csv
+.env
