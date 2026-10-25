@@ -1,7 +1,6 @@
 data/
-results/*.csv
+results/*
 !results/sample/
-!results/sample/*.csv
 __pycache__/
 *.pyc
 .pytest_cache/
